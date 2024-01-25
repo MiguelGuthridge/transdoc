@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "transdoc"
+version = "0.1.0"
+description = "A simple tool for rewriting Python docstrings"
+authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+libcst = "^1.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.4"
+mypy = "^1.8.0"
+flake8 = "^7.0.0"
+Flake8-pyproject = "^1.2.3"
+coverage = "^7.4.0"
+autopep8 = "^2.0.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
