@@ -25,13 +25,14 @@ any docstring.
 ...     """
 ...     return f"Hello, {name}!"
 ...
->>> print(transdoc.transform(say_hi, [my_rule]))
+>>> transdoc.transform(say_hi, [my_rule])
 def say_hi(name: str) -> str:
     """
     Says hello to someone.
     This text was added by Transdoc!
     """
     return f"Hello, {name}!"
+
 ```
 
 Rules can be as complex as you need, accepting any number of arguments. You can
@@ -52,7 +53,7 @@ call them like you would call the original Python function.
 ...     """
 ...     return f"Hello, {name}!"
 ...
->>> print(transdoc.transform(say_hi, [repeat]))
+>>> transdoc.transform(say_hi, [repeat])
 def say_hi(name: str) -> str:
     """
     Says hello to someone.
@@ -83,7 +84,7 @@ special syntax for this. Simply place the string argument in square brackets.
 ...     # Please don't write code this insecure in real life
 ...     return f"<a href={href}>{text}</a>"
 ...
->>> print(transdoc.transform(make_link, [repeat]))
+>>> transdoc.transform(make_link, [repeat])
 def generate_link(text: str, href: str) -> str:
     """
     Generate an HTML link.
@@ -92,3 +93,9 @@ def generate_link(text: str, href: str) -> str:
     # Please don't write code this insecure in real life
     return f"<a href={href}>{text}</a>"
 ```
+
+### Note on REPL usage
+
+Transdoc doesn't work in a REPL, since Python doesn't store the source code for
+functions defined in a REPL environment. The above examples are instead used
+to demonstrate Transdoc's capabilities.
