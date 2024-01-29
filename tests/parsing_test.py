@@ -179,7 +179,7 @@ class Greeter:  # pragma: no cover
 
 
 class_result = '\n'.join([
-    'class Greeter:',
+    'class Greeter:  # pragma: no cover',
     '    """',
     '    This class is useful for saying hi to people and stuff',
     '',
