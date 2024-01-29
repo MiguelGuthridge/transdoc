@@ -3,6 +3,15 @@
 A simple tool for transforming Python docstrings, by embedding results from
 Python function calls.
 
+I made this for the purpose of improving the documentation of another project
+I maintain, so it only has the bare-minimum functionality, and almost no error
+handling. If you want me to improve it, please let me know, and I'll happily
+add some nicer error messages and the like.
+
+## Installation
+
+`pip install transdoc`
+
 ## Usage
 
 Creating rules is as simple as defining Python functions.
