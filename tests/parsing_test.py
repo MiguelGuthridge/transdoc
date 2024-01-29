@@ -25,10 +25,25 @@ def hello(name: str):
 
 
 def test_no_transform():
-    """Does transdoc leave functions that don't have transformations alone?"""
+    """Transdoc should leave functions that don't have transformations alone"""
     # Pylance yells about this but Mypy seems fine
     assert transform(test_no_transform, [hi]) \
         == getsource(test_no_transform)
+
+
+def test_no_transform_braces():
+    """
+    Transdoc should leave functions that don't have transformations alone, even
+    if they include {curly braces} in their docstring
+    """
+    assert transform(test_no_transform_braces, [hi]) \
+        == getsource(test_no_transform_braces)
+
+
+def test_no_transform_single_quote():
+    "Transdoc should ignore single-quoted docstrings, {{hi}}"
+    assert transform(test_no_transform_single_quote, [hi]) \
+        == getsource(test_no_transform_single_quote)
 
 
 ###############################################################################
@@ -68,7 +83,29 @@ def test_square_bracket_syntax():
     Test a transformation which provides a text argument using the square
     bracket syntax
     """
-    assert transform(fn_square_bracket, [hello])  == fn_square_bracket_result
+    assert transform(fn_square_bracket, [hello]) == fn_square_bracket_result
+
+
+###############################################################################
+
+
+def fn_square_bracket_braces():
+    """{{hello[Miguel with {braces}]}}"""
+
+
+fn_square_bracket_braces_result = \
+    '''def fn_square_bracket_braces():
+    """hello, Miguel with {braces}"""
+'''
+
+
+def test_square_bracket_syntax_with_braces():
+    """
+    Test a transformation which provides a text argument using the square
+    bracket syntax, including {braces in the argument}
+    """
+    assert transform(fn_square_bracket_braces, [hello]) \
+        == fn_square_bracket_braces_result
 
 
 ###############################################################################
@@ -89,7 +126,7 @@ def test_transformation_function_call():
     Test a transformation which provides arguments using the function-call
     syntax
     """
-    assert transform(fn_call_simple, [hello])  == fn_call_simple_result
+    assert transform(fn_call_simple, [hello]) == fn_call_simple_result
 
 
 ###############################################################################
