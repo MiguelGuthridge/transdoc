@@ -18,6 +18,17 @@ Flake8-pyproject = "^1.2.3"
 coverage = "^7.4.0"
 autopep8 = "^2.0.4"
 
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "return NotImplemented",
+    "@overload",
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
