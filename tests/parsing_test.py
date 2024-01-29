@@ -154,7 +154,7 @@ def test_transformation_function_call_kwargs():
 ###############################################################################
 
 
-class Greeter:
+class Greeter:  # pragma: no cover
     """
     This class is useful for saying hi to people and stuff
 
