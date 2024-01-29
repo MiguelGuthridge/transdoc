@@ -12,7 +12,6 @@ any docstring.
 
 ```py
 >>> import transdoc
->>> from inspect import getsource
 >>> def my_rule() -> str:
 ...     """
 ...     A simple rule for rewriting docstrings
@@ -26,7 +25,7 @@ any docstring.
 ...     """
 ...     return f"Hello, {name}!"
 ...
->>> print(transdoc.transform(getsource(say_hi), [my_rule]))
+>>> print(transdoc.transform(say_hi, [my_rule]))
 def say_hi(name: str) -> str:
     """
     Says hello to someone.
@@ -53,7 +52,7 @@ call them like you would call the original Python function.
 ...     """
 ...     return f"Hello, {name}!"
 ...
->>> print(transdoc.transform(getsource(say_hi), [repeat]))
+>>> print(transdoc.transform(say_hi, [repeat]))
 def say_hi(name: str) -> str:
     """
     Says hello to someone.
@@ -84,7 +83,7 @@ special syntax for this. Simply place the string argument in square brackets.
 ...     # Please don't write code this insecure in real life
 ...     return f"<a href={href}>{text}</a>"
 ...
->>> print(transdoc.transform(getsource(make_link), [repeat]))
+>>> print(transdoc.transform(make_link, [repeat]))
 def generate_link(text: str, href: str) -> str:
     """
     Generate an HTML link.
