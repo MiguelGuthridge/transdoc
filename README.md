@@ -1,4 +1,4 @@
-# Transdoc 🩵🤍💖
+# Transdoc 💗🤍💙
 
 A simple tool for transforming Python docstrings, by embedding results from
 Python function calls.
