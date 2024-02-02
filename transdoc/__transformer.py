@@ -15,7 +15,9 @@ from types import (
 )
 from typing import Union
 import libcst
+
 from .__rule import Rule
+from .__collect_rules import collect_rules
 
 
 # FIXME: This isn't especially safe - find a nicer type annotation to use
@@ -149,13 +151,33 @@ def make_rules_dict(rules: list[Rule]) -> dict[str, Rule]:
     return {r.__name__: r for r in rules}
 
 
-def transform(source: Union[str, SourceObjectType], rules: list[Rule]) -> str:
+def transform(
+    source: Union[str, SourceObjectType],
+    rules: Union[list[Rule], dict[str, Rule], ModuleType],
+) -> str:
     """
-    Transform a Python module by rewriting its documentation according to the
-    given rules
+    Transform the Python code by rewriting its documentation according to the
+    given rules.
+
+    ## Args
+
+    * `source` (`str | SourceObjectType`): source code to transform. If a
+      Python code object is given, `inspect.getsource` will be used, meaning
+      that an error will be given if source code is not available.
+
+    * `rules` (`list[Rule] | dict[str, Rule] | ModuleRule`): a list of rules to
+      apply, or a module containing these rules.
+
+    ## Returns
+
+    * `str`: the transformed source code, with all rules applied.
     """
     if not isinstance(source, str):
         source = inspect.getsource(source)
+    if isinstance(rules, ModuleType):
+        rules = collect_rules(rules)
+    elif isinstance(rules, list):
+        rules = make_rules_dict(rules)
     cst = libcst.parse_module(source)
-    updated_cst = cst.visit(DocTransformer(make_rules_dict(rules)))
+    updated_cst = cst.visit(DocTransformer(rules))
     return updated_cst.code
