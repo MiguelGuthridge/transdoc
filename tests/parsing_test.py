@@ -3,7 +3,6 @@ Tests / Parsing test
 
 Tests for ensuring that parsing of docstrings works correctly.
 """
-import importlib
 from pathlib import Path
 from transdoc import transform
 from inspect import getsource
