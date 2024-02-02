@@ -3,6 +3,8 @@ Tests / Parsing test
 
 Tests for ensuring that parsing of docstrings works correctly.
 """
+import importlib
+from pathlib import Path
 from transdoc import transform
 from inspect import getsource
 
@@ -210,3 +212,16 @@ def test_transform_class():
     Does Transdoc transform docstrings for classes and their methods correctly?
     """
     assert transform(Greeter, [hi]) == class_result
+
+
+###############################################################################
+
+
+def test_transform_module():
+    """
+    Can Transdoc transform entire modules?
+    """
+    mod_path = Path(__file__).parent.joinpath("data", "module.py")
+    mod_txt = open(mod_path).read()
+
+    assert transform(mod_txt, [hi]) == mod_txt.replace("{{hi}}", "hi")
