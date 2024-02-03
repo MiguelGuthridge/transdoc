@@ -6,6 +6,30 @@ authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
 license = "MIT"
 readme = "README.md"
 
+repository = "https://github.com/MiguelGuthridge/transdoc"
+# documentation = "https://miguelguthridge.github.io/transdoc/"
+
+keywords = [
+    "documentation",
+    "source",
+    "transform",
+    "parse",
+    "pre-processor",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Topic :: Documentation",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Pre-processors",
+    "Typing :: Typed",
+]
+
+include = ["py.typed"]
+
 [tool.poetry.dependencies]
 python = "^3.9"
 libcst = "^1.1.0"
