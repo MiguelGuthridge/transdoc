@@ -6,6 +6,7 @@ Definitions for error classes used by Transdoc.
 
 
 # IDEA: Perhaps explore using exception groups to report all the errors?
+# This will probably require Python 3.11 though
 
 
 class TransdocSyntaxError(SyntaxError):
