@@ -13,8 +13,10 @@ from types import (
     TracebackType,
     FrameType,
 )
-from typing import Union
-import libcst
+from dataclasses import dataclass
+from typing import Union, Optional
+import libcst as cst
+from libcst.metadata import CodePosition, PositionProvider, MetadataWrapper
 
 from .__rule import Rule
 from .__collect_rules import collect_rules
@@ -32,58 +34,149 @@ SourceObjectType = Union[
 ]
 
 
-class DocTransformer(libcst.CSTTransformer):
+@dataclass
+class TransformErrorInfo:
+    """
+    A simple wrapper class for information about an error that occurred
+    during documentation transformation
+    """
+    position: CodePosition
+    error_info: Union[str, Exception]
+
+
+class DocTransformer(cst.CSTTransformer):
     """
     Rewrite documentation.
     """
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, rules: dict[str, Rule]) -> None:
         """
         Create an instance of the doc transformer module
         """
         self.__rules = rules
+        self.__errors: list[TransformErrorInfo] = []
+        self.__current_node: Optional[cst.CSTNode] = None
 
-    def __report_error(self, msg: str, exc: Exception) -> None:
+    def get_errors(self) -> list[TransformErrorInfo]:
+        return self.__errors
+
+    def __get_position(
+        self,
+        offset: Optional[tuple[int, int]] = None,
+    ) -> CodePosition:
         """
-        Report an error that occurred when processing a docstring
-
-        TODO
+        Returns the position of the given node, for use with error reporting.
         """
+        assert self.__current_node is not None
+        position = self.get_metadata(
+            PositionProvider,
+            self.__current_node,
+        ).start
 
-    def __eval_rule(self, rule: str) -> str:
+        if offset is not None:
+            line, column = offset
+
+            if line:
+                new_line = position.line + line
+                new_col = column
+            else:
+                new_line = position.line
+                new_col = position.column + column
+
+            position = CodePosition(new_line, new_col)
+
+        return position
+
+    def __report_error(
+        self,
+        position: CodePosition,
+        error_info: Union[str, Exception],
+    ):
+        """
+        Report an error
+        """
+        self.__errors.append(TransformErrorInfo(
+            position,
+            error_info,
+        ))
+
+    def __report_rule_if_unknown(self, rule_name: str, position: CodePosition):
+        """
+        Ensure a rule is known, and report an error if it is not.
+
+        Return `True` if an error was reported.
+        """
+        if rule_name not in self.__rules:
+            self.__report_error(
+                position,
+                f"NameError: unknown rule '{rule_name}'",
+            )
+            return True
+        return False
+
+    def __eval_rule(self, rule: str, position: CodePosition) -> str:
         """
         Execute a command, alongside the given set of rules.
         """
         # if it's just a function name, evaluate it as a call with no arguments
         if rule.isidentifier():
-            return self.__rules[rule]()
+            if self.__report_rule_if_unknown(rule, position):
+                return ""
+            try:
+                return self.__rules[rule]()
+            except Exception as e:
+                self.__report_error(position, e)
+                return ""
         # If it uses square brackets, then extract the contained string, and
         # pass that
         if rule.split('[')[0].isidentifier() and rule.endswith(']'):
             rule_name, *content = rule.split('[')
             content_str = '['.join(content).removesuffix(']')
-            return self.__rules[rule_name](content_str)
+            if self.__report_rule_if_unknown(rule_name, position):
+                return ""
+            try:
+                return self.__rules[rule_name](content_str)
+            except Exception as e:
+                self.__report_error(position, e)
+                return ""
         # Otherwise, it should be a regular function call
         # This calls `eval` with the rules dictionary set as the globals, since
         # otherwise it'd just be too complex to parse things.
         if rule.split('(')[0].isidentifier() and rule.endswith(')'):
-            return eval(rule, self.__rules)
+            if self.__report_rule_if_unknown(rule.split('(')[0], position):
+                return ""
+            try:
+                return eval(rule, self.__rules)
+            except Exception as e:
+                self.__report_error(position, e)
+                return ""
 
         # If we reach this point, it's not valid data, and we should give an
         # error
-        # TODO: Make this nicer once we have better error reporting
-        raise ValueError("Bad rule parsing")
+        self.__report_error(
+            position,
+            "SyntaxError: unable to evaluate rule due to invalid syntax",
+        )
+        return ""
 
     def __process_docstring(self, docstring: str) -> str:
         """
         Process the given docstring according to the rules of the
         DocTransformer.
         """
+        # This code is extremely yucky but I cannot be bothered to write a
+        # nicer version of it
+        # Perhaps I could use a state machine or something?
         new_doc = StringIO()
         cmd_buffer = StringIO()
-        in_buffer = False
+        in_cmd_buffer = False
         brace_count = 0
+        cmd_start_position: Optional[CodePosition] = None
+        col_offset = 0
+        line_offset = 0
         for c in docstring:
-            if in_buffer:
+            if in_cmd_buffer:
                 # FIXME: This assumes that all instances of `}}` close the
                 # buffer, which isn't necessarily the case. This will break
                 # function calls where nested dicts are used as arguments.
@@ -92,9 +185,14 @@ class DocTransformer(libcst.CSTTransformer):
                     if brace_count == 2:
                         # End of command, let's execute it
                         cmd_buffer.seek(0)
-                        new_doc.write(self.__eval_rule(cmd_buffer.read()))
+                        assert cmd_start_position is not None
+                        new_doc.write(self.__eval_rule(
+                            cmd_buffer.read(),
+                            cmd_start_position,
+                        ))
                         cmd_buffer = StringIO()
-                        in_buffer = False
+                        in_cmd_buffer = False
+                        cmd_start_position = None
                         brace_count = 0
                 else:
                     # If we previously found a closing brace
@@ -106,7 +204,11 @@ class DocTransformer(libcst.CSTTransformer):
                 if c == "{":
                     brace_count += 1
                     if brace_count == 2:
-                        in_buffer = True
+                        cmd_start_position = self.__get_position((
+                            line_offset,
+                            col_offset + 1,
+                        ))
+                        in_cmd_buffer = True
                         brace_count = 0
                 else:
                     # If we previously found a closing brace
@@ -115,8 +217,22 @@ class DocTransformer(libcst.CSTTransformer):
                     brace_count = 0
                     new_doc.write(c)
 
+            # Finally update the source position
+            if c == '\n':
+                line_offset += 1
+                col_offset = 0
+            else:
+                col_offset += 1
+
         # TODO: if we're in a command, report an error, and also clean up extra
         # brace
+        if in_cmd_buffer:
+            assert cmd_start_position is not None
+            self.__report_error(
+                cmd_start_position,
+                "SyntaxError: unfinished command: are you missing a closing "
+                "'}}'?",
+            )
 
         # Return the output
         new_doc.seek(0)
@@ -124,9 +240,9 @@ class DocTransformer(libcst.CSTTransformer):
 
     def leave_SimpleString(
         self,
-        original_node: libcst.SimpleString,
-        updated_node: libcst.SimpleString,
-    ) -> libcst.BaseExpression:
+        original_node: cst.SimpleString,
+        updated_node: cst.SimpleString,
+    ) -> cst.BaseExpression:
         """
         After visiting a string, check if it is a triple-quoted string. If so,
         apply formatting to it.
@@ -135,12 +251,14 @@ class DocTransformer(libcst.CSTTransformer):
         so that we can handle attribute docstrings (which otherwise don't work
         very nicely).
         """
+        self.__current_node = original_node
         string = original_node.value
         if string.startswith('"""') or string.startswith("'''"):
             return updated_node.with_changes(
                 value=self.__process_docstring(updated_node.value)
             )
 
+        self.__current_node = None
         return updated_node
 
 
@@ -154,7 +272,7 @@ def make_rules_dict(rules: list[Rule]) -> dict[str, Rule]:
 def transform(
     source: Union[str, SourceObjectType],
     rules: Union[list[Rule], dict[str, Rule], ModuleType],
-) -> str:
+) -> Union[str, list[TransformErrorInfo]]:
     """
     Transform the Python code by rewriting its documentation according to the
     given rules.
@@ -178,6 +296,12 @@ def transform(
         rules = collect_rules(rules)
     elif isinstance(rules, list):
         rules = make_rules_dict(rules)
-    cst = libcst.parse_module(source)
-    updated_cst = cst.visit(DocTransformer(rules))
+    parsed = MetadataWrapper(cst.parse_module(source))
+    transformer = DocTransformer(rules)
+    updated_cst = parsed.visit(transformer)
+
+    errors = transformer.get_errors()
+    if errors:
+        return errors
+
     return updated_cst.code
