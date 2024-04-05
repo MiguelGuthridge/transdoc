@@ -20,6 +20,7 @@ from libcst.metadata import CodePosition, PositionProvider, MetadataWrapper
 
 from .__rule import Rule
 from .__collect_rules import collect_rules
+from .errors import TransdocSyntaxError, TransdocNameError
 
 
 # FIXME: This isn't especially safe - find a nicer type annotation to use
@@ -41,7 +42,7 @@ class TransformErrorInfo:
     during documentation transformation
     """
     position: CodePosition
-    error_info: Union[str, Exception]
+    error_info: Exception
 
 
 class DocTransformer(cst.CSTTransformer):
@@ -91,7 +92,7 @@ class DocTransformer(cst.CSTTransformer):
     def __report_error(
         self,
         position: CodePosition,
-        error_info: Union[str, Exception],
+        error_info: Exception,
     ):
         """
         Report an error
@@ -110,7 +111,7 @@ class DocTransformer(cst.CSTTransformer):
         if rule_name not in self.__rules:
             self.__report_error(
                 position,
-                f"NameError: unknown rule '{rule_name}'",
+                TransdocNameError(f"unknown rule '{rule_name}'"),
             )
             return True
         return False
@@ -156,7 +157,9 @@ class DocTransformer(cst.CSTTransformer):
         # error
         self.__report_error(
             position,
-            "SyntaxError: unable to evaluate rule due to invalid syntax",
+            TransdocSyntaxError(
+                "unable to evaluate rule due to invalid syntax"
+            ),
         )
         return ""
 
@@ -173,7 +176,9 @@ class DocTransformer(cst.CSTTransformer):
         in_cmd_buffer = False
         brace_count = 0
         cmd_start_position: Optional[CodePosition] = None
-        col_offset = 0
+
+        # Column offset starts at 3 to account for stripped out triple-quotes
+        col_offset = 3
         line_offset = 0
         for c in docstring:
             if in_cmd_buffer:
@@ -230,8 +235,9 @@ class DocTransformer(cst.CSTTransformer):
             assert cmd_start_position is not None
             self.__report_error(
                 cmd_start_position,
-                "SyntaxError: unfinished command: are you missing a closing "
-                "'}}'?",
+                TransdocSyntaxError(
+                    "unfinished command: are you missing a closing '}}'?"
+                ),
             )
 
         # Return the output
@@ -254,8 +260,12 @@ class DocTransformer(cst.CSTTransformer):
         self.__current_node = original_node
         string = original_node.value
         if string.startswith('"""') or string.startswith("'''"):
+            quote_type = string[0:3]
+
+            processed = self.__process_docstring(updated_node.value[3:-3])
+
             return updated_node.with_changes(
-                value=self.__process_docstring(updated_node.value)
+                value=f"{quote_type}{processed}{quote_type}"
             )
 
         self.__current_node = None
