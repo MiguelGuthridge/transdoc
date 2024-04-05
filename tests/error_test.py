@@ -3,8 +3,14 @@
 
 Test cases for errors when transforming documentation.
 """
-from transdoc import transform, TransformErrorInfo, CodePosition
-from transdoc.errors import TransdocNameError, TransdocSyntaxError
+from transdoc import transform
+from transdoc.errors import (
+    TransformErrorInfo,
+    TransdocNameError,
+    TransdocSyntaxError,
+    TransdocTransformationError,
+)
+from libcst.metadata import CodePosition
 import jestspectation as expect
 
 
@@ -17,13 +23,29 @@ class EqualError(Exception):
         return isinstance(value, EqualError) and value.args == self.args
 
 
+def err(fn) -> list[TransformErrorInfo]:
+    """
+    Helper function to extract and unpack error information from
+    transformation.
+    """
+    try:
+        fn()
+    except TransdocTransformationError as e:
+        return list(e.args)
+
+    assert False, "Transformation didn't produce error"
+
+
+###############################################################################
+
+
 def test_unknown_rule():
     """
     Is an error reported if an unknown rule is transformed?
 
     {{unknown}}
     """
-    assert transform(test_unknown_rule, []) == [
+    assert err(lambda: transform(test_unknown_rule, [])) == [
         expect.ObjectContainingItems({
             "position": CodePosition(5, 6),
             "error_info": expect.Any(TransdocNameError)
@@ -41,13 +63,13 @@ def error_rule(value="Error"):
     raise EqualError(value)
 
 
-def test_rule_raises_exception_standard():
+def test_rule_raises_standard():
     """
     Is an error reported if a rule raises an exception when processing?
 
     {{error_rule}}
     """
-    assert transform(test_rule_raises_exception_standard, [error_rule]) == [
+    assert err(lambda: transform(test_rule_raises_standard, [error_rule])) == [
         TransformErrorInfo(
             CodePosition(5, 6),
             EqualError("Error"),
@@ -55,13 +77,15 @@ def test_rule_raises_exception_standard():
     ]
 
 
-def test_rule_raises_exception_string_arg():
+def test_rule_raises_string_arg():
     """
     Is an error reported if a rule raises an exception when processing?
 
     {{error_rule[Error message]}}
     """
-    assert transform(test_rule_raises_exception_string_arg, [error_rule]) == [
+    assert err(
+        lambda: transform(test_rule_raises_string_arg, [error_rule])
+    ) == [
         TransformErrorInfo(
             CodePosition(5, 6),
             EqualError("Error message"),
@@ -69,13 +93,13 @@ def test_rule_raises_exception_string_arg():
     ]
 
 
-def test_rule_raises_exception_call_arg():
+def test_rule_raises_call_arg():
     """
     Is an error reported if a rule raises an exception when processing?
 
     {{error_rule("Error message")}}
     """
-    assert transform(test_rule_raises_exception_call_arg, [error_rule]) == [
+    assert err(lambda: transform(test_rule_raises_call_arg, [error_rule])) == [
         TransformErrorInfo(
             CodePosition(5, 6),
             EqualError("Error message"),
@@ -92,7 +116,7 @@ def test_rule_syntax_error():
 
     {{invalid syntax}}
     """
-    assert transform(test_rule_syntax_error, []) == [
+    assert err(lambda: transform(test_rule_syntax_error, [])) == [
         expect.ObjectContainingItems({
             "position": CodePosition(5, 6),
             "error_info": expect.Any(TransdocSyntaxError)
@@ -104,7 +128,7 @@ def test_unclosed_braces():
     """
     Is an error reported if a docstring contains an unclosed {{brace pair?
     """
-    assert transform(test_unclosed_braces, []) == [
+    assert err(lambda: transform(test_unclosed_braces, [])) == [
         expect.ObjectContainingItems({
             "position": CodePosition(3, 63),
             "error_info": expect.Any(TransdocSyntaxError)

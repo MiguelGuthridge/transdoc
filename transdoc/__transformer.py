@@ -13,14 +13,18 @@ from types import (
     TracebackType,
     FrameType,
 )
-from dataclasses import dataclass
 from typing import Union, Optional
 import libcst as cst
 from libcst.metadata import CodePosition, PositionProvider, MetadataWrapper
 
 from .__rule import Rule
 from .__collect_rules import collect_rules
-from .errors import TransdocSyntaxError, TransdocNameError
+from .errors import (
+    TransdocTransformationError,
+    TransformErrorInfo,
+    TransdocSyntaxError,
+    TransdocNameError,
+)
 
 
 # FIXME: This isn't especially safe - find a nicer type annotation to use
@@ -33,16 +37,6 @@ SourceObjectType = Union[
     FrameType,
     type,
 ]
-
-
-@dataclass
-class TransformErrorInfo:
-    """
-    A simple wrapper class for information about an error that occurred
-    during documentation transformation
-    """
-    position: CodePosition
-    error_info: Exception
 
 
 class DocTransformer(cst.CSTTransformer):
@@ -282,7 +276,7 @@ def make_rules_dict(rules: list[Rule]) -> dict[str, Rule]:
 def transform(
     source: Union[str, SourceObjectType],
     rules: Union[list[Rule], dict[str, Rule], ModuleType],
-) -> Union[str, list[TransformErrorInfo]]:
+) -> str:
     """
     Transform the Python code by rewriting its documentation according to the
     given rules.
@@ -295,6 +289,11 @@ def transform(
 
     * `rules` (`list[Rule] | dict[str, Rule] | ModuleRule`): a list of rules to
       apply, or a module containing these rules.
+
+    ## Raises
+
+    * `TransdocTransformationError`: collection of errors produced when
+      performing the transformation.
 
     ## Returns
 
@@ -312,6 +311,6 @@ def transform(
 
     errors = transformer.get_errors()
     if errors:
-        return errors
+        raise TransdocTransformationError(*errors)
 
     return updated_cst.code
