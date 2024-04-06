@@ -14,9 +14,9 @@ Creating transformation rules is as simple as defining Python functions.
 ```py
 # rules.py
 def my_rule() -> str:
-    """
+    '''
     A simple rule for rewriting docstrings
-    """
+    '''
     return f"This text was added by Transdoc!"
 ```
 
@@ -26,10 +26,10 @@ any docstring.
 ```py
 # program.py
 def say_hi(name: str) -> str:
-    """
+    '''
     Says hello to someone.
     {{my_rule}}
-    """
+    '''
     return f"Hello, {name}!"
 ```
 
@@ -40,10 +40,10 @@ contents:
 ```py
 # program.py
 def say_hi(name: str) -> str:
-    """
+    '''
     Says hello to someone.
     This text was added by Transdoc!
-    """
+    '''
     return f"Hello, {name}!"
 ```
 
@@ -53,9 +53,9 @@ call them like you would call the original Python function.
 ```py
 # rules.py
 def repeat(text: str, n: int = 2) -> str:
-    """
+    '''
     Repeat the given text any number of times.
-    """
+    '''
     return " ".join([text for _ in range(n)])
 ```
 
@@ -63,11 +63,11 @@ Using this rule to transform the following code
 
 ```py
 def say_hi(name: str) -> str:
-    """
+    '''
     Says hello to someone.
     {{repeat('wowee!')}}
     {{repeat('WOWEE!', n=5)}}
-    """
+    '''
     return f"Hello, {name}!"
 ```
 
@@ -75,11 +75,11 @@ will produce this result:
 
 ```py
 def say_hi(name: str) -> str:
-    """
+    '''
     Says hello to someone.
     Wowee! Wowee!
     WOWEE! WOWEE! WOWEE! WOWEE! WOWEE!
-    """
+    '''
     return f"Hello, {name}!"
 ```
 
@@ -88,9 +88,9 @@ special syntax for this. Simply place the string argument in square brackets.
 
 ```py
 def mdn_link(e: str) -> str:
-    """
+    '''
     Return a Markdown-formatted link for an HTML element
-    """
+    '''
     return (
         f"[View <{e}> on MDN]"
         f"(https://developer.mozilla.org/en-US/docs/Web/HTML/Element/{e})"
@@ -101,10 +101,10 @@ Using this rule to transform the following code
 
 ```py
 def make_link(text: str, href: str) -> str:
-    """
+    '''
     Generate an HTML link.
     {{mdn_link[a]}}
-    """
+    '''
     # Please don't write code this insecure in real life
     return f"<a href={href}>{text}</a>"
 ```
@@ -113,10 +113,10 @@ will produce this result:
 
 ```py
 def make_link(text: str, href: str) -> str:
-    """
+    '''
     Generate an HTML link.
     [View <a> on MDN](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a)
-    """
+    '''
     # Please don't write code this insecure in real life
     return f"<a href={href}>{text}</a>"
 ```
@@ -133,7 +133,7 @@ def fancy():
     return "✨fancy✨"
 
 def my_function():
-    """Wow this is some {{fancy}} documentation"""
+    '''Wow this is some {{fancy}} documentation'''
 
 
 result = transdoc.transform(
