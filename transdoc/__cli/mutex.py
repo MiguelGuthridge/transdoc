@@ -13,7 +13,7 @@ class Mutex(click.Option):
     Adapted from https://stackoverflow.com/a/51235564/6335363 (CC BY-SA 4.0)
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self.mutex_with: list = kwargs.pop("mutex_with")
 
         assert self.mutex_with, "'mutex_with' parameter required"

@@ -9,7 +9,7 @@ import sys
 import click
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Optional, Literal, overload
+from typing import Optional
 from types import ModuleType
 from traceback import print_exception
 import importlib
@@ -75,27 +75,6 @@ class FileMapping:
     input: Path
     output: Optional[Path]
     transform: bool
-
-
-@overload
-def cli(
-    input: Path,
-    rule_file: Path,
-    output: Path,
-    *,
-    force: bool = False,
-) -> int:
-    ...
-
-
-@overload
-def cli(
-    input: Path,
-    rule_file: Path,
-    *,
-    dryrun: Literal[True],
-) -> int:
-    ...
 
 
 @click.command("transdoc")
@@ -193,17 +172,17 @@ def cli(
         if not mapping.transform:
             if not dryrun:
                 # Just copy from the input to the output
-                with open(mapping.input, 'rb') as in_file:
+                with open(mapping.input, 'rb') as copy_in:
                     assert mapping.output is not None
                     mapping.output.parent.mkdir(parents=True, exist_ok=True)
-                    with open(mapping.output, 'wb') as out_file:
-                        out_file.write(in_file.read())
+                    with open(mapping.output, 'wb') as copy_out:
+                        copy_out.write(copy_in.read())
             continue
 
         # Open file
-        with open(mapping.input, encoding='utf-8') as in_file:
+        with open(mapping.input, encoding='utf-8') as read_in:
             try:
-                in_text = in_file.read()
+                in_text = read_in.read()
             except Exception as e:
                 # FIXME
                 encountered_errors = True
@@ -221,8 +200,8 @@ def cli(
             assert mapping.output is not None
             # Write the result
             mapping.output.parent.mkdir(parents=True, exist_ok=True)
-            with open(mapping.output, "w", encoding='utf-8') as out_file:
-                out_file.write(result)
+            with open(mapping.output, "w", encoding='utf-8') as write_out:
+                write_out.write(result)
 
     if encountered_errors:
         return 1
