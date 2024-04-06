@@ -11,3 +11,5 @@ __all__ = [
 
 from .__transformer import transform
 from .__rule import Rule
+
+VERSION = "1.0.0"
