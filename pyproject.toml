@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "transdoc"
-version = "0.1.1"
+version = "1.0.0"
 description = "A simple tool for rewriting Python docstrings"
 authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
 license = "MIT"
