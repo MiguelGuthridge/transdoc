@@ -30,6 +30,7 @@ transdoc = "transdoc.__main__:cli"
 [tool.poetry.dependencies]
 python = "^3.9"
 libcst = "^1.2.0"
+click = "^8.1.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.4.4,<9.0.0"
