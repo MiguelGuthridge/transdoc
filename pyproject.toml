@@ -28,7 +28,7 @@ include = ["py.typed"]
 transdoc = "transdoc.__main__:cli"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 libcst = "^1.2.0"
 click = "^8.1.7"
 
