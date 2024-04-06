@@ -9,7 +9,7 @@ import sys
 import click
 from pathlib import Path
 from dataclasses import dataclass
-from typing import NoReturn
+from typing import Optional, Literal, overload
 from types import ModuleType
 from traceback import print_exception
 import importlib
@@ -20,7 +20,7 @@ from transdoc.errors import TransdocTransformationError
 from transdoc.__collect_rules import collect_rules
 
 
-def error_and_exit(errors: list[str]) -> NoReturn:
+def display_error_list(errors: list[str]) -> int:
     """
     Display errors and exit the program
     """
@@ -29,7 +29,7 @@ def error_and_exit(errors: list[str]) -> NoReturn:
     for e in errors:
         print(e, file=sys.stderr)
 
-    exit(2)
+    return 2
 
 
 def load_rule_file(rule_file: Path) -> ModuleType:
@@ -73,11 +73,32 @@ def report_transformation_error(
 @dataclass
 class FileMapping:
     input: Path
-    output: Path
+    output: Optional[Path]
     transform: bool
 
 
-@click.command()
+@overload
+def cli(
+    input: Path,
+    rule_file: Path,
+    output: Path,
+    *,
+    force: bool = False,
+) -> int:
+    ...
+
+
+@overload
+def cli(
+    input: Path,
+    rule_file: Path,
+    *,
+    dryrun: Literal[True],
+) -> int:
+    ...
+
+
+@click.command("transdoc")
 @click.argument(
     'input',
     type=click.Path(exists=True, path_type=Path),
@@ -85,9 +106,10 @@ class FileMapping:
 )
 @click.option(
     '-r',
-    '--rule',
+    '--rule-file',
     type=click.Path(exists=True, path_type=Path),
-    help='Path(s) to any Python files/modules containing rules for Transdoc',
+    required=True,
+    help='Path to any Python file/module containing rules for Transdoc to use',
 )
 @click.option(
     '-o',
@@ -112,7 +134,14 @@ class FileMapping:
     mutex_with=["dryrun"],
 )
 @click.version_option(VERSION)
-def transdoc(input: Path, rule: Path, output: Path, dryrun: bool, force: bool):
+def cli(
+    input: Path,
+    rule_file: Path,
+    output: Optional[Path] = None,
+    *,
+    dryrun: bool = False,
+    force: bool = False,
+) -> int:
     """
     Main entrypoint to the program.
     """
@@ -122,7 +151,10 @@ def transdoc(input: Path, rule: Path, output: Path, dryrun: bool, force: bool):
         for dirpath, _, filenames in os.walk(input):
             for filename in filenames:
                 in_file = Path(dirpath).joinpath(filename)
-                out_file = output.joinpath(in_file.relative_to(input))
+                if output is None:
+                    out_file = None
+                else:
+                    out_file = output.joinpath(in_file.relative_to(input))
                 perform_transformation = in_file.suffix == ".py"
                 file_mappings.append(FileMapping(
                     in_file,
@@ -135,6 +167,7 @@ def transdoc(input: Path, rule: Path, output: Path, dryrun: bool, force: bool):
         file_mappings.append(FileMapping(input, output, True))
 
     if not force and not dryrun:
+        assert output is not None
         if output.exists():
             if output.is_dir() and len(os.listdir(output)):
                 errors.append(
@@ -142,23 +175,39 @@ def transdoc(input: Path, rule: Path, output: Path, dryrun: bool, force: bool):
             else:
                 errors.append(f"Output location '{output}' already exists")
 
-    if rule.suffix != ".py":
-        errors.append(f"Rule file '{rule}' must be a Python file")
+    if rule_file.suffix != ".py":
+        errors.append(f"Rule file '{rule_file}' must be a Python file")
 
     try:
-        rules = collect_rules(load_rule_file(rule))
+        rules = collect_rules(load_rule_file(rule_file))
     except Exception as e:
-        errors.append(f"Error when importing rule file '{rule}':\n    {e}")
+        errors.append(
+            f"Error when importing rule file '{rule_file}':\n    {e}")
 
     if len(errors):
-        error_and_exit(errors)
+        return display_error_list(errors)
 
     encountered_errors = False
 
     for mapping in file_mappings:
+        if not mapping.transform:
+            if not dryrun:
+                # Just copy from the input to the output
+                with open(mapping.input, 'rb') as in_file:
+                    assert mapping.output is not None
+                    mapping.output.parent.mkdir(parents=True, exist_ok=True)
+                    with open(mapping.output, 'wb') as out_file:
+                        out_file.write(in_file.read())
+            continue
+
         # Open file
         with open(mapping.input, encoding='utf-8') as in_file:
-            in_text = in_file.read()
+            try:
+                in_text = in_file.read()
+            except Exception as e:
+                # FIXME
+                encountered_errors = True
+                print(e)
 
         # Transform the data
         try:
@@ -169,10 +218,13 @@ def transdoc(input: Path, rule: Path, output: Path, dryrun: bool, force: bool):
             continue
 
         if not dryrun:
+            assert mapping.output is not None
             # Write the result
             mapping.output.parent.mkdir(parents=True, exist_ok=True)
             with open(mapping.output, "w", encoding='utf-8') as out_file:
                 out_file.write(result)
 
     if encountered_errors:
-        exit(1)
+        return 1
+
+    return 0

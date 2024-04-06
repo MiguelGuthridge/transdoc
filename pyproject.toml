@@ -25,7 +25,7 @@ classifiers = [
 include = ["py.typed"]
 
 [tool.poetry.scripts]
-transdoc = "transdoc.__main__:transdoc"
+transdoc = "transdoc.__main__:cli"
 
 [tool.poetry.dependencies]
 python = "^3.9"
