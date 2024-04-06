@@ -142,3 +142,37 @@ result = transdoc.transform(
 )
 # Result now contains a string with the transformed source code for my_function
 ```
+
+## Integration with build systems
+
+You can integrate Transdoc with project management systems and use it as a
+pre-build script, so that your docstrings can be automatically built right
+before packaging and distributing your project.
+
+### Poetry
+
+The system is undocumented and unstable, however it is possible (according to
+[this GitHub comment](https://github.com/python-poetry/poetry/issues/5539#issuecomment-1126818974))
+to get a pre-build script added.
+
+In `pyproject.toml`:
+
+```toml
+[tool.poetry.build]
+generate-setup-file = false
+script = "build.py"
+
+# ...
+
+[build-system]
+requires = ["poetry-core", "transdoc"]
+build-backend = "poetry.core.masonry.api"
+```
+
+In a file `build.py`:
+
+```py
+import transdoc
+
+exit(transdoc.cli("src", "rules.py", "build_dir", force=True))
+```
