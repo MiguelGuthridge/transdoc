@@ -14,5 +14,5 @@ def file_contents(path: str) -> str:
     This rule has simple cacheing to improve performance when used
     repeatedly.
     """
-    with open(path) as f:
+    with open(path, encoding='utf-8') as f:
         return f.read()
