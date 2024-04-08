@@ -174,5 +174,5 @@ In a file `build.py`:
 ```py
 import transdoc
 
-exit(transdoc.cli("src", "rules.py", "build_dir", force=True))
+exit(transdoc.main("src", "rules.py", "build_dir", force=True))
 ```
