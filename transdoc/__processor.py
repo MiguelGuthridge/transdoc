@@ -6,6 +6,7 @@ Process an entire file or directory using transdoc.
 import importlib.util
 import os
 import sys
+from shutil import rmtree
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -128,6 +129,12 @@ def main(
 
     if len(errors):
         return display_error_list(errors)
+
+    # Remove the output file/directory
+    if not dryrun:
+        assert output is not None
+        if output.is_dir() and force:
+            rmtree(output)
 
     encountered_errors = False
 
