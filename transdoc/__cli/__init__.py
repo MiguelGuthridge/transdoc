@@ -7,7 +7,7 @@ import click
 from pathlib import Path
 from typing import Optional
 from .mutex import Mutex
-from .main import main
+from transdoc import main
 
 from transdoc.__consts import VERSION
 

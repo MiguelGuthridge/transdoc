@@ -14,4 +14,4 @@ __all__ = [
 from .__consts import VERSION as __version__
 from .__transformer import transform
 from .__rule import Rule
-from .__cli import main
+from .__processor import main

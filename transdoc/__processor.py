@@ -1,3 +1,8 @@
+"""
+# Transdoc / processor
+
+Process an entire file or directory using transdoc.
+"""
 import importlib.util
 import os
 import sys
