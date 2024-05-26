@@ -39,6 +39,12 @@ SourceObjectType = Union[
 ]
 
 
+def indent_by(amount: int, string: str) -> str:
+    return '\n'.join(
+        [f"{' ' * amount}{line.rstrip()}" for line in string.splitlines()]
+    ).lstrip()
+
+
 class DocTransformer(cst.CSTTransformer):
     """
     Rewrite documentation.
@@ -110,7 +116,12 @@ class DocTransformer(cst.CSTTransformer):
             return True
         return False
 
-    def __eval_rule(self, rule: str, position: CodePosition) -> str:
+    def __eval_rule(
+        self,
+        rule: str,
+        position: CodePosition,
+        indent: int,
+    ) -> str:
         """
         Execute a command, alongside the given set of rules.
         """
@@ -119,7 +130,7 @@ class DocTransformer(cst.CSTTransformer):
             if self.__report_rule_if_unknown(rule, position):
                 return ""
             try:
-                return self.__rules[rule]()
+                return indent_by(indent, self.__rules[rule]())
             except Exception as e:
                 self.__report_error(position, e)
                 return ""
@@ -131,7 +142,7 @@ class DocTransformer(cst.CSTTransformer):
             if self.__report_rule_if_unknown(rule_name, position):
                 return ""
             try:
-                return self.__rules[rule_name](content_str)
+                return indent_by(indent, self.__rules[rule_name](content_str))
             except Exception as e:
                 self.__report_error(position, e)
                 return ""
@@ -142,7 +153,7 @@ class DocTransformer(cst.CSTTransformer):
             if self.__report_rule_if_unknown(rule.split('(')[0], position):
                 return ""
             try:
-                return eval(rule, self.__rules)
+                return indent_by(indent, eval(rule, self.__rules))
             except Exception as e:
                 self.__report_error(position, e)
                 return ""
@@ -171,6 +182,8 @@ class DocTransformer(cst.CSTTransformer):
         brace_count = 0
         cmd_start_position: Optional[CodePosition] = None
 
+        indent_level = self.__get_position().column
+
         # Column offset starts at 3 to account for stripped out triple-quotes
         col_offset = 3
         line_offset = 0
@@ -188,6 +201,7 @@ class DocTransformer(cst.CSTTransformer):
                         new_doc.write(self.__eval_rule(
                             cmd_buffer.read(),
                             cmd_start_position,
+                            indent_level,
                         ))
                         cmd_buffer = StringIO()
                         in_cmd_buffer = False

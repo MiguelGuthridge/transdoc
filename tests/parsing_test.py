@@ -17,6 +17,11 @@ def hi():
     return "hi"
 
 
+def multiline():
+    """Rule producing multiple lines of output"""
+    return "hi\nhi\nhi"
+
+
 def hello(name: str):
     """Simple rule, accepting a parameter"""
     return f"hello, {name}"
@@ -64,6 +69,27 @@ fn_simple_result = "\n".join([
 def test_simple_transformation():
     """Test a simple transformation"""
     assert transform(fn_simple, [hi]) == fn_simple_result
+
+
+###############################################################################
+
+
+def fn_multiline():
+    """{{multiline}}"""
+
+
+fn_multiline_result = "\n".join([
+    'def fn_multiline():',
+    '    """hi',
+    '    hi',
+    '    hi"""',
+    '',
+])
+
+
+def test_multiline_transformation():
+    """Test a simple transformation"""
+    assert transform(fn_multiline, [multiline]) == fn_multiline_result
 
 
 ###############################################################################

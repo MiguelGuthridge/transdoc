@@ -17,7 +17,6 @@ EXPECTED = '''
 def example():
     """
     Example
-
     """
 '''.removeprefix('\n')
 
