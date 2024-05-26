@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "transdoc"
-version = "0.2.2"
+version = "0.2.3"
 description = "A simple tool for transforming Python docstrings by embedding results from Python function calls"
 authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
 license = "MIT"
