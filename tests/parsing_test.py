@@ -96,12 +96,12 @@ def test_multiline_transformation():
 
 
 def fn_square_bracket():
-    """{{hello[Miguel]}}"""
+    """{{hello[Maddy]}}"""
 
 
 fn_square_bracket_result = \
     '''def fn_square_bracket():
-    """hello, Miguel"""
+    """hello, Maddy"""
 '''
 
 
@@ -117,12 +117,12 @@ def test_square_bracket_syntax():
 
 
 def fn_square_bracket_braces():
-    """{{hello[Miguel with {braces}]}}"""
+    """{{hello[Maddy with {braces}]}}"""
 
 
 fn_square_bracket_braces_result = \
     '''def fn_square_bracket_braces():
-    """hello, Miguel with {braces}"""
+    """hello, Maddy with {braces}"""
 '''
 
 
@@ -139,12 +139,12 @@ def test_square_bracket_syntax_with_braces():
 
 
 def fn_call_simple():
-    """{{hello("Miguel")}}"""
+    """{{hello("Maddy")}}"""
 
 
 fn_call_simple_result = \
     '''def fn_call_simple():
-    """hello, Miguel"""
+    """hello, Maddy"""
 '''
 
 
@@ -160,12 +160,12 @@ def test_transformation_function_call():
 
 
 def fn_call_kwargs():
-    """{{hello(name="Miguel")}}"""
+    """{{hello(name="Maddy")}}"""
 
 
 fn_call_kwargs_result = \
     '''def fn_call_kwargs():
-    """hello, Miguel"""
+    """hello, Maddy"""
 '''
 
 

@@ -2,12 +2,12 @@
 name = "transdoc"
 version = "0.2.3"
 description = "A simple tool for transforming Python docstrings by embedding results from Python function calls"
-authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
+authors = ["Maddy Guthridge <hello@maddyguthridge.com>"]
 license = "MIT"
 readme = "README.md"
 
-repository = "https://github.com/MiguelGuthridge/transdoc"
-# documentation = "https://miguelguthridge.github.io/transdoc/"
+repository = "https://github.com/MaddyGuthridge/transdoc"
+# documentation = "https://maddyguthridge.github.io/transdoc/"
 
 keywords = ["documentation", "source", "transform", "parse", "pre-processor"]
 classifiers = [
